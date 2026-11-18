@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-SG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slot Check</title>
+<meta name="description" content="A patient's WhatsApp request read against a clinic's roster, diary and booking rules. Only slots the rules allow are offered, each pointing at the rule and the row behind it. Plain code; the front desk approves every reply.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbfcfd">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1020">
+<link rel="icon" href="data:,">
+<link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cross" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></symbol>
+  <symbol id="i-none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.2 2.2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<main class="shell">
+  <div class="sheet-col">
+    <header class="top">
+      <p class="mark">Slot Check <span class="tag">Sample data</span></p>
+      <h1>Every slot offered names the rule that allowed it.</h1>
+      <p class="sub">Six made-up WhatsApp requests to one clinic, read against its roster, diary and booking rules. Plain code. The front desk approves each reply.</p>
+    </header>
+
+    <section class="reading" aria-labelledby="summary">
+      <p class="summary" id="summary" role="status"><span class="sum-main">Checking</span></p>
+      <button type="button" class="btn text why-btn" id="why-btn" aria-expanded="false" aria-controls="chain">What the rules check</button>
+      <div class="why-text" id="chain" hidden>
+        <p>The type sets the length, the buffer after it, which doctors take it and whether a referral letter must be on file. A follow-up goes to the doctor the patient last saw. A number with no visit on record books a new-patient consult.</p>
+        <p>A slot is offered only if it starts on the quarter hour, sits inside a session of the right kind, clears every booking and its buffer, gives two hours' notice, avoids public holidays and falls inside the diary export. A doctor, a day or a type that cannot be read is asked about, not guessed.</p>
+      </div>
+      <div id="groups" class="groups"></div>
+      <p class="approved" id="approved" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <aside class="evidence-col" id="side" aria-live="polite"></aside>
+
+  <section class="tool" id="own-tool" aria-labelledby="own-h">
+    <h2 id="own-h">Try your own message</h2>
+    <p class="tool-sub">Checked in this browser against the same clinic, as if sent Wed 18 Nov at 9:40 pm.</p>
+    <label class="field-l" for="own-from">From</label>
+    <select id="own-from"></select>
+    <label class="field-l" for="own-in">Message</label>
+    <textarea id="own-in" rows="3" spellcheck="false" autocomplete="off" placeholder="Can I see Dr Oei Friday after 10am for my review?"></textarea>
+    <div class="actions">
+      <button type="button" id="own-check" class="btn primary">Check it</button>
+      <button type="button" id="own-sample" class="btn text">Fill in an example</button>
+    </div>
+    <p id="own-error" class="error" role="alert" hidden></p>
+    <div id="own-out"></div>
+  </section>
+
+  <section class="tool" id="src-tool" aria-labelledby="src-h">
+    <h2 id="src-h">The messages and the tables</h2>
+    <p class="tool-sub">Patient records, appointment types, doctors, the weekly roster, the diary export, public holidays and the rules, as lines of text.</p>
+    <div class="actions top-actions">
+      <button type="button" class="btn text" id="src-btn" aria-expanded="false" aria-controls="src-out">Show them</button>
+      <button type="button" id="reset" class="btn text">Reset sample</button>
+    </div>
+    <div id="src-out" hidden></div>
+  </section>
+
+  <footer class="foot" id="foot">
+    <p>For clinic front desks that book from WhatsApp. Built by Arnold Ikpemosi Adeyemi. Made-up clinic, doctors, patients and diary.</p>
+    <p><a href="https://ikpemosi.work">ikpemosi.work</a></p>
+  </footer>
+</main>
+<script type="module" src="app.js?v=2"></script>
+</body>
+</html>

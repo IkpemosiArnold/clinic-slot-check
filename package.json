@@ -1,0 +1,9 @@
+{
+  "name": "clinic-slot-check",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A patient's WhatsApp request read against a clinic's roster, diary and booking rules. Only slots the rules allow are offered, each pointing at the rule and the row behind it.",
+  "scripts": { "test": "node --test" },
+  "license": "MIT"
+}
