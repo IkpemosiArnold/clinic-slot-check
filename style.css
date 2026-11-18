@@ -163,11 +163,11 @@ a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness:
   .shell {
     max-width: 1180px; display: grid; column-gap: var(--s7);
     grid-template-columns: minmax(380px, 1fr) minmax(0, 600px);
-    grid-template-areas: "sheet side" "own side" "srcs side" "foot foot";
+    grid-template-areas: "sheet side" "own side" "srcs side" "foot side";
     align-items: start; padding-top: var(--s7);
   }
   .sheet-col { grid-area: sheet; }
-  .evidence-col { display: block; grid-area: side; grid-row: 1 / span 3; position: sticky; top: var(--s5); max-height: calc(100vh - 48px); overflow: auto; padding: 0 var(--s4) var(--s5) 0; }
+  .evidence-col { display: block; grid-area: side; grid-row: 1 / span 4; position: sticky; top: var(--s5); max-height: calc(100vh - 48px); overflow: auto; padding: 0 var(--s4) var(--s5) 0; }
   #own-tool { grid-area: own; }
   #src-tool { grid-area: srcs; }
   .foot { grid-area: foot; }

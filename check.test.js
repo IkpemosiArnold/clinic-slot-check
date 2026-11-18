@@ -10,7 +10,7 @@ const times = (slots) => slots.map((s) => `${dayLabel(s.day)} ${hhmm(s.start)}`)
 const ask = (text, from = "+65 9••• 2141", at = SENT_AT) => checkRequest(world, { id: "t", from, name: "Sam", at, text });
 const NEW_NUMBER = "+65 9••• 0000";
 
-test("sample: 3 of 6 requests get slots, 3 are held or asked back", () => {
+test("sample: 3 of 6 requests get slots, 1 is asked which day with slots for both, 2 are held or asked back", () => {
   assert.deepEqual(all.map((r) => [r.name, r.state, r.label]), [
     ["Wei Ling", "pass", "3 slots"],
     ["Rizal", "pass", "2 slots"],
@@ -222,4 +222,35 @@ test("every reference points at the exact text it claims", () => {
     n++;
   }
   assert.ok(n > 100);
+});
+
+test("a cancellation or a change is passed to the front desk, not booked", () => {
+  for (const text of ["I want to cancel my appointment", "Can I change my appointment to Thursday?", "need to reschedule pls"]) {
+    const r = ask(text, "+65 8••• 7730");
+    assert.equal(r.kind, "change", text);
+    assert.equal(r.offered.length, 0, text);
+    assert.match(r.reply, /front desk will find your booking/, text);
+  }
+});
+
+test("Jun: the switch to a new-patient consult leads the panel", () => {
+  const r = by("Jun");
+  assert.equal(r.changed, true);
+  assert.match(r.why, /no visit on record\. Offered a new-patient consult instead/);
+});
+
+test("a bare time like 9am is read", () => {
+  assert.equal(ask("Dr Teh sat 9am").read.window.from, 540);
+});
+
+test("'Wed' sent on a Wednesday evening reads as next Wednesday once today's session is over", () => {
+  const r = ask("Dr Oei Wed afternoon", "+65 8••• 7730");
+  assert.equal(r.state, "pass");
+  assert.equal(times(r.offered)[0], "Wed 25 Nov 14:45");
+});
+
+test("a day the doctor is not in says so in the reply", () => {
+  const r = ask("follow up with Dr Oei on Thursday", "+65 8••• 7730");
+  assert.equal(r.kind, "noslot");
+  assert.match(r.reply, /isn't in clinic on Thu 19 Nov/);
 });

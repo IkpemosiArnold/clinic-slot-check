@@ -165,6 +165,10 @@ export function readMessage(text, sentIso) {
   ]) for (const m of all(re, text)) types.push({ code, ref: claim(span(m)) });
   if (types.length) out.type = types;
 
+  // a change or a cancellation is about a booking already made, not a new one
+  const ch = /\b(cancel\w*|resched\w*|postpone\w*|(?:change|move|shift)\s+my\s+(?:appt|appointment|booking|slot))\b/i.exec(text);
+  if (ch) out.change = claim(span(ch));
+
   // time window, by W1 and W2; several are intersected
   const windows = [];
   for (const [re, from, to] of [
@@ -180,6 +184,12 @@ export function readMessage(text, sentIso) {
     if (w === "after" || w === "from") windows.push({ from: h.min, to: 1440, ref: r, rule: h.rule });
     else if (w === "before") windows.push({ from: 0, to: h.min, ref: r, rule: h.rule });
     else windows.push({ from: h.min, to: h.min + 1, ref: r, rule: h.rule });
+  }
+  for (const m of all(/(?<![\w/:.])(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)\b/gi, text)) {
+    const r = span(m);
+    if (overlaps(r, taken)) continue;
+    const h = hourOf(m[1], m[2], m[3]);
+    if (h) windows.push({ from: h.min, to: h.min + 1, ref: claim(r), rule: null });
   }
   for (const m of all(/\bany\s*time\b/gi, text)) windows.push({ from: 0, to: 1440, ref: claim(span(m)), rule: null });
   if (windows.length) {
@@ -209,7 +219,7 @@ export function readMessage(text, sentIso) {
     if (mod === "next") {
       if (wd > todayWd) days.push({ dates: [today + ahead], ambiguous: [today + ahead, today + ahead + 7], ref: r, rule: "W3" });
       else days.push({ dates: [today + (ahead === 0 ? 7 : ahead)], ref: r });
-    } else days.push({ dates: [today + ahead], ref: r });
+    } else days.push({ dates: ahead === 0 ? [today, today + 7] : [today + ahead], ref: r });
   }
   const mon = MONTHS.join("|");
   for (const m of all(new RegExp(`\\b(\\d{1,2})\\s*(?:st|nd|rd|th)?\\s+(${mon})[a-z]*\\b`, "gi"), text)) pushDate(days, +m[1], MONTHS.indexOf(m[2].slice(0, 3).toLowerCase()), null, span(m), today);
@@ -263,7 +273,7 @@ function search(world, { type, doctors, dates, window, sent }) {
       const sessions = world.roster.filter((s) => s.doctor === doc && s.day === DAYS[weekday(day)]);
       const fit = sessions.filter((s) => s.kind === T.session_kind);
       if (!sessions.length) {
-        if (dates.length <= 2) notes.push({ day, text: `${docName(world, doc)} has no session on ${dayLabel(day)}.`, refs: [ruleRef(world, "R2")] });
+        if (dates.length <= 2) notes.push({ day, text: `${docName(world, doc)} has no session on ${dayLabel(day)}.`, refs: [ruleRef(world, "R2")], nosession: true, doctor: doc });
         continue;
       }
       if (!fit.length) {
@@ -443,6 +453,9 @@ export function checkRequest(world, msg) {
   if (!read.refs.length) {
     held = { state: "none", kind: "unread", why: "Nothing in the message names a doctor, a type, a day or a time. Slots are not offered on a guess. The reply asks what they need.", whyRefs: [] };
   }
+  if (read.change) {
+    held = { state: "none", kind: "change", why: `"${read.change.text}" is about a booking already made. It goes to the front desk; no new slot is offered.`, whyRefs: [read.change] };
+  }
   if (held) {
     Object.assign(res, held);
     return finish(world, res);
@@ -465,7 +478,15 @@ export function checkRequest(world, msg) {
       Object.assign(res, { state: "none", kind: "holiday", why: hol.text, whyRefs: hol.refs, holiday: hol });
       res.notes = res.notes.filter((n) => n !== hol);
     }
-    else Object.assign(res, { state: "none", kind: "noslot", why: "No slot fits what was asked. The reply asks about another day or time.", whyRefs: [] });
+    else {
+      const ns = res.notes.filter((n) => n.nosession);
+      if (ns.length && res.readings.every((r) => r.dates.every((d) => ns.some((n) => n.day === d)))) {
+        Object.assign(res, { state: "none", kind: "noslot", why: ns.map((n) => n.text).join(" "), whyRefs: ns.flatMap((n) => n.refs), away: ns });
+      } else Object.assign(res, { state: "none", kind: "noslot", why: "No slot fits what was asked. The reply asks about another day or time.", whyRefs: [] });
+    }
+  }
+  if (res.changed && res.state === "pass") {
+    Object.assign(res, { why: "Asked for a follow-up, but this number has no visit on record. Offered a new-patient consult instead.", whyRefs: [ruleRef(world, "R7")] });
   }
   return finish(world, res);
 }
@@ -482,7 +503,7 @@ function finish(world, res) {
   res.offered = offered;
   res.allowedCount = res.readings.reduce((n, r) => n + (r.allowed?.length || 0), 0);
   res.blockedCount = res.readings.reduce((n, r) => n + (r.blocked?.length || 0), 0);
-  res.label = res.state === "pass" ? `${offered.length} slot${offered.length === 1 ? "" : "s"}` : { ask: "Ask", "ask-type": "Ask", unread: "Not read", doctor: "Not found", noslot: "No slot", holiday: "Closed", date: "Ask", time: "Ask" }[res.kind] || "Held";
+  res.label = res.state === "pass" ? `${offered.length} slot${offered.length === 1 ? "" : "s"}` : { ask: "Ask", "ask-type": "Ask", unread: "Not read", doctor: "Not found", noslot: "No slot", holiday: "Closed", change: "Front desk", date: "Ask", time: "Ask" }[res.kind] || "Held";
   res.reply = draftReply(world, res);
   return res;
 }
@@ -526,6 +547,8 @@ export function draftReply(world, res) {
   if (res.kind === "date") return `${hi}which day would you like to come in?`;
   if (res.kind === "time") return `${hi}what time of day suits you?`;
   if (res.kind === "holiday") return `${hi}the clinic is closed on ${dayLabel(res.holiday.day)} for ${res.holiday.holiday}. Would another day work?`;
+  if (res.kind === "change") return `${hi}thanks for letting us know. Our front desk will find your booking and reply here shortly.`;
+  if (res.kind === "noslot" && res.away) return `${hi}${docName(world, res.away[0].doctor)} isn't in clinic on ${joinOr([...new Set(res.away.map((n) => dayLabel(n.day)))])}. Would another day work?`;
   if (res.kind === "noslot") return `${hi}there's nothing free at the time you asked. Would another day or time work?`;
   return `${hi}thanks for your message. Our front desk will check this one and come back to you.`;
 }

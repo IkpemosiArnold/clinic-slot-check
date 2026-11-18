@@ -151,7 +151,7 @@ function blockedRow(b) {
 function detail(r, { own = false } = {}) {
   const box = el("div", "evidence");
   box.append(el("p", "side-h", own ? "Your message" : `WhatsApp from ${r.name}, ${timeOf(r.msg.at)}`));
-  const titleText = r.state === "pass" ? `${r.offered.length} slot${r.offered.length === 1 ? "" : "s"} to offer` : r.kind === "ask" ? "Ask which day" : r.kind === "doctor" ? "Doctor not found" : r.kind === "holiday" ? "Clinic closed" : r.kind === "noslot" ? "No slot fits" : r.kind === "unread" ? "Nothing read" : r.state === "fail" ? "Held for the front desk" : "Ask the patient";
+  const titleText = r.state === "pass" ? `${r.offered.length} slot${r.offered.length === 1 ? "" : "s"} to offer` : r.kind === "ask" ? "Ask which day" : r.kind === "doctor" ? "Doctor not found" : r.kind === "holiday" ? "Clinic closed" : r.kind === "noslot" ? "No slot fits" : r.kind === "unread" ? "Nothing read" : r.kind === "change" ? "For the front desk" : r.state === "fail" ? "Held for the front desk" : "Ask the patient";
   box.append(el("p", `side-title st-${r.state}`, titleText));
 
   if (r.why) {
@@ -164,8 +164,9 @@ function detail(r, { own = false } = {}) {
 
   box.append(el("p", "ev-h", own ? "What you wrote" : "What they wrote"));
   const badMsg = new Set(r.whyRefs.filter((x) => x.doc === "msg").map((x) => x.start));
+  if (r.changed) for (const t of r.read.type || []) badMsg.add(t.ref ? t.ref.start : t.start);
   const q = el("p", "quote");
-  q.append(marked(r.msg.text, r.read.refs.map((x) => ({ ...x, tone: badMsg.has(x.start) ? r.state : "pass" }))));
+  q.append(marked(r.msg.text, r.read.refs.map((x) => ({ ...x, tone: badMsg.has(x.start) ? (r.changed ? "none" : r.state) : "pass" }))));
   box.append(q);
   if (!r.read.refs.length) box.append(el("p", "muted-line", "No word in it was read."));
 
@@ -252,10 +253,11 @@ function statusCell(r) {
 
 function render({ keep = false } = {}) {
   const pass = results.filter((r) => r.state === "pass").length;
+  const both = results.filter((r) => r.kind === "ask" && r.offered.length).length;
   const sum = $("summary");
   sum.replaceChildren(
     el("span", "sum-main", `${pass} of ${results.length} get slots`),
-    el("span", "sum-side muted", `${results.length - pass} held or asked back`),
+    el("span", "sum-side muted", `${both ? `${both} asked which day, with slots for both. ` : ""}${results.length - pass - both} held or asked back`),
   );
   const ul = el("ul", `rows${firstRender ? "" : keep ? "" : " fresh"}`);
   for (const r of results) {
@@ -264,7 +266,7 @@ function render({ keep = false } = {}) {
     b.type = "button";
     b.setAttribute("aria-expanded", String(openId === r.id));
     const val = el("span", "val");
-    val.append(el("b", null, r.msg.text), el("span", "meta", `${r.name}, ${typeName(r).toLowerCase()}${r.doctors?.length === 1 ? `, ${world.doctors.find((d) => d.short === r.doctors[0]).name}` : ""}`));
+    val.append(el("b", null, r.msg.text), el("span", "meta", `${r.name}, ${r.changed ? "no visit on record: " : ""}${typeName(r).toLowerCase()}${r.doctors?.length === 1 ? `, ${world.doctors.find((d) => d.short === r.doctors[0]).name}` : ""}`));
     const chev = icon("chev");
     chev.classList.add("chev");
     b.append(statusCell(r), val, chev);

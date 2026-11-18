@@ -43,6 +43,7 @@ The proposal would then go through the same checks, so a receptionist only appro
 - An offered slot is not held. Two patients offered the same time (Jun and Farah on Friday at 10:15 am in the sample) could both say yes. The real version would hold a slot for a short time or confirm on a first-come basis.
 - "Starting before 10" means the appointment starts before 10, not that it ends by then.
 - Referral rules are one yes or no per type. Insurer or panel rules are not modelled.
+- Changes and cancellations are spotted and passed to the front desk. The page does not look up the booking being changed.
 - Nothing is sent. "Approve reply" only marks the reply as approved on this page.
 
 ## Run the tests
@@ -51,7 +52,7 @@ The proposal would then go through the same checks, so a receptionist only appro
 node --test
 ```
 
-Needs Node 20 or later. No dependencies. 28 tests cover the sample result, a cancelled booking, buffers on both sides of a slot, the session end, doctors who do not take a type, the referral rule (with and without a letter on file), an injection in a consult session, a doctor not on the list, a follow-up from a new number, "next Fri" and "next Tuesday" on a Wednesday, the last doctor seen, Christmas Day, a date past the export, dates that are not dates or have passed, two hours' notice, hours with no am or pm, times that cannot both hold, a message with nothing readable, two types in one message, the three-slot cap, that every offered slot clears every live booking and its buffer, and that every reference points at the exact text it claims.
+Needs Node 20 or later. No dependencies. 33 tests cover the sample result, a cancelled booking, a request to cancel or change a booking, a bare time like "9am", a weekday named on that same weekday after its session, a day the doctor is not in, buffers on both sides of a slot, the session end, doctors who do not take a type, the referral rule (with and without a letter on file), an injection in a consult session, a doctor not on the list, a follow-up from a new number, "next Fri" and "next Tuesday" on a Wednesday, the last doctor seen, Christmas Day, a date past the export, dates that are not dates or have passed, two hours' notice, hours with no am or pm, times that cannot both hold, a message with nothing readable, two types in one message, the three-slot cap, that every offered slot clears every live booking and its buffer, and that every reference points at the exact text it claims.
 
 ## Open the page locally
 
@@ -69,7 +70,7 @@ Fonts: Geist and Newsreader (SIL Open Font License), in `fonts/`.
 
 ## Provenance
 
-Built on 18 Nov 2026 with AI coding agents, directed by Arnold Ikpemosi Adeyemi. The clinic (Wrenfield Orthopaedic Clinic), the doctors (Dr Corwin Teh, Dr Petrina Oei, Dr Imran Saffuan), the patients, the masked phone numbers, the roster and the diary are made up. Web searches for the clinic name and for each doctor's name on 18 Nov 2026 found no clinic or doctor by those names. Patients have first names only. The public holidays are Singapore's gazetted 2026 dates (Ministry of Manpower).
+Built on 18 Nov 2026 with AI coding agents, directed by Arnold Ikpemosi Adeyemi. The clinic (Wrenfield Orthopaedic Clinic), the doctors (Dr Corwin Teh, Dr Petrina Oei, Dr Imran Saffuan), the patients, the masked phone numbers, the roster and the diary are made up. Web searches for the clinic name and for each doctor's name on 18 Nov 2026 found no clinic or doctor by those names. Patients have first names only. The two public holidays in the table are from Singapore's gazetted 2026 list (Ministry of Manpower).
 
 ## Licence
 
